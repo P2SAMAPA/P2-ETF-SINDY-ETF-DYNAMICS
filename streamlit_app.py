@@ -125,7 +125,6 @@ def main():
         
 dX/dt = Θ(X) · Ξ
 
-text
 
 Where:
 - `Θ(X)` is a library of candidate functions (polynomials, trig, etc.)
@@ -138,4 +137,4 @@ st.caption(f"Data as of {run_date}")
 
 
 if __name__ == "__main__":
-    main()
+main()
