@@ -18,10 +18,15 @@ UNIVERSES = {
 WINDOWS = [126, 252, 504, 756, 1008]
 
 # SINDy configuration
+# NOTE: alpha/threshold are on the scale of daily log-returns (~0.005-0.02).
+# The previous values (alpha=0.1, threshold=0.01) were an order of magnitude
+# too large for that scale, so the Lasso step zeroed out every coefficient on
+# real data -> the model always degenerated to "predict no change", which is
+# why every window size and every ticker produced identical results.
 SINDY_CONFIG = {
     "poly_order": 2,
-    "threshold": 0.01,
-    "alpha": 0.1,
+    "threshold": 0.0005,
+    "alpha": 0.0001,
     "max_iter": 100,
     "use_trig": False,
 }
