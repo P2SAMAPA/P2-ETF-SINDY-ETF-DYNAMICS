@@ -1,4 +1,3 @@
-
 """
 streamlit_app.py  —  SINDy ETF Dynamics Dashboard
 """
