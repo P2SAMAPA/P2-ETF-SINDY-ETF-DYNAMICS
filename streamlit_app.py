@@ -125,7 +125,7 @@ def main():
         
 dX/dt = Θ(X) · Ξ
 
-text
+
 
 Where:
 - `Θ(X)` is a library of candidate functions (polynomials, trig, etc.)
@@ -134,6 +134,7 @@ Where:
 This identifies the key dynamical relationships between ETFs and predicts future returns.
 """)
 
+# This is the line that was OUTSIDE the function - now it's INSIDE
 st.caption(f"Data as of {run_date}")
 
 
