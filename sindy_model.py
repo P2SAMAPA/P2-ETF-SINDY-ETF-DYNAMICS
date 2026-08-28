@@ -146,8 +146,19 @@ class SINDyModel:
     def predict(self, X: np.ndarray, dt: float = 1.0, steps: int = 1) -> np.ndarray:
         """
         Predict future states by integrating the discovered dynamics.
+
+        The forward integration is seeded with the MEAN of X (the state
+        representative of the window/regime that was fit), not just the
+        single most-recent raw observation. Seeding on the last raw value
+        made predictions dominated by one noisy day's return and made them
+        almost independent of the training window size, since the most
+        recent observation is identical no matter how far back training
+        data goes. Seeding on the window mean makes the training window
+        size actually influence the forecast, while for callers that pass
+        in a single-row X (e.g. the 1-step walk-forward backtest), the mean
+        of one row is just that row, so behavior there is unchanged.
         """
-        X_current = X[-1:].copy()
+        X_current = X.mean(axis=0, keepdims=True)
         predictions = [X_current]
         
         for _ in range(steps):
