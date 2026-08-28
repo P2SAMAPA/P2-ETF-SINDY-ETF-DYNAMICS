@@ -125,6 +125,8 @@ def main():
         
 dX/dt = Θ(X) · Ξ
 
+text
+
 Where:
 - `Θ(X)` is a library of candidate functions (polynomials, trig, etc.)
 - `Ξ` is a sparse coefficient matrix found via sparse regression
