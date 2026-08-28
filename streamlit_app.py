@@ -119,7 +119,7 @@ def main():
         st.markdown("---")
     
     # SINDy Info
-    dX/dt = Θ(X) · Ξ
+    dX/dt = Θ(X)  Ξ
     
 Where:
 - `Θ(X)` is a library of candidate functions (polynomials, trig, etc.)
