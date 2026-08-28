@@ -119,8 +119,10 @@ def main():
         st.markdown("---")
     
     # SINDy Info
-    dX/dt = Θ(X)  Ξ
-    
+    with st.expander("🔬 What is SINDy?"):
+        st.markdown("""
+        **SINDy (Sparse Identification of Nonlinear Dynamics)** discovers governing equations from data:
+        
 Where:
 - `Θ(X)` is a library of candidate functions (polynomials, trig, etc.)
 - `Ξ` is a sparse coefficient matrix found via sparse regression
@@ -133,7 +135,3 @@ st.caption(f"Data as of {run_date}")
 
 if __name__ == "__main__":
 main()
-    with st.expander("🔬 What is SINDy?"):
-        st.markdown("""
-        **SINDy (Sparse Identification of Nonlinear Dynamics)** discovers governing equations from data:
-        
