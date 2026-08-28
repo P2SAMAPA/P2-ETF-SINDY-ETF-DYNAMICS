@@ -119,6 +119,20 @@ def main():
         st.markdown("---")
     
     # SINDy Info
+    dX/dt = Θ(X) · Ξ
+    
+Where:
+- `Θ(X)` is a library of candidate functions (polynomials, trig, etc.)
+- `Ξ` is a sparse coefficient matrix found via sparse regression
+
+This identifies the key dynamical relationships between ETFs and predicts future returns.
+""")
+
+st.caption(f"Data as of {run_date}")
+
+
+if __name__ == "__main__":
+main()
     with st.expander("🔬 What is SINDy?"):
         st.markdown("""
         **SINDy (Sparse Identification of Nonlinear Dynamics)** discovers governing equations from data:
