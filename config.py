@@ -18,17 +18,23 @@ UNIVERSES = {
 WINDOWS = [126, 252, 504, 756, 1008]
 
 # SINDy configuration
-# NOTE: alpha/threshold are on the scale of daily log-returns (~0.005-0.02).
-# The previous values (alpha=0.1, threshold=0.01) were an order of magnitude
-# too large for that scale, so the Lasso step zeroed out every coefficient on
-# real data -> the model always degenerated to "predict no change", which is
-# why every window size and every ticker produced identical results.
+# NOTE on alpha/threshold: the full feature library (own-return terms +
+# macro terms) is standardized (zero mean, unit variance) before fitting,
+# so a single alpha/threshold can regularize fairly across heterogeneous
+# input scales (e.g. VIX ~10-30 vs. daily returns ~0.01). After
+# standardization, fitted coefficients are on roughly the same order as
+# the return-derivative target (~1e-3 to 1e-4), which is what these
+# defaults are tuned against.
 SINDY_CONFIG = {
     "poly_order": 2,
     "threshold": 0.0005,
     "alpha": 0.0001,
-    "max_iter": 100,
+    "max_iter": 5000,     # small alpha needs many more coordinate-descent
+                          # iterations to actually converge; 100 was too low
+                          # and silently under-fit every single Lasso call
     "use_trig": False,
+    "use_macro": True,   # include macro variables (VIX, yield curve, DXY,
+                          # credit spreads, ...) as exogenous SINDy features
 }
 
 TOP_N = 3
