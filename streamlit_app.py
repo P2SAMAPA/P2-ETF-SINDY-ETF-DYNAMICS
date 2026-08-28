@@ -137,4 +137,4 @@ st.caption(f"Data as of {run_date}")
 
 
 if __name__ == "__main__":
-main()
+    main()
