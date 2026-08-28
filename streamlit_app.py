@@ -51,7 +51,9 @@ def main():
     
     top_picks = data.get('top_picks', {})
     
+    universe_counter = 0
     for universe, picks in top_picks.items():
+        universe_counter += 1
         st.subheader(universe)
         
         cols = st.columns(min(len(picks), 3))
@@ -75,7 +77,7 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
         
-        # Chart
+        # Chart with unique key
         df = pd.DataFrame(picks)
         fig = go.Figure()
         fig.add_trace(go.Bar(
@@ -88,7 +90,9 @@ def main():
                           for r in df['expected_return']]
         ))
         fig.update_layout(height=250, margin=dict(l=0, r=0, t=20, b=0), showlegend=False)
-        st.plotly_chart(fig, use_container_width=True)
+        
+        # Add unique key for each chart
+        st.plotly_chart(fig, use_container_width=True, key=f"chart_{universe_counter}")
         st.markdown("---")
     
     # SINDy explanation
