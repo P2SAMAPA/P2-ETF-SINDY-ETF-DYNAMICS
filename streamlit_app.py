@@ -1,7 +1,3 @@
-"""
-streamlit_app.py  —  SINDy ETF Dynamics Dashboard
-"""
-
 import streamlit as st
 import pandas as pd
 import requests
@@ -9,7 +5,6 @@ import json
 import glob
 from datetime import datetime
 import plotly.graph_objects as go
-import plotly.express as px
 
 st.set_page_config(
     page_title="P2-SINDY-ETF-DYNAMICS",
@@ -17,47 +12,25 @@ st.set_page_config(
     layout="wide"
 )
 
-st.markdown("""
-    <style>
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        padding: 1rem 0;
-    }
-    .ticker-card {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin: 0.5rem 0;
-        border-left: 5px solid #667eea;
-    }
-    .confidence-high { color: #27ae60; font-weight: 600; }
-    .confidence-medium { color: #f39c12; font-weight: 600; }
-    .confidence-low { color: #e74c3c; font-weight: 600; }
-    </style>
-""", unsafe_allow_html=True)
+st.title("📈 P2-SINDY-ETF-DYNAMICS")
+st.markdown("*Sparse Identification of Nonlinear Dynamics for ETF Selection*")
 
 
 def load_data():
     """Load latest results."""
-    try:
-        json_files = glob.glob("sindy_results_*.json")
-        if json_files:
-            latest = sorted(json_files)[-1]
-            with open(latest, 'r') as f:
-                return json.load(f)
-    except:
-        pass
+    # Try local files first
+    json_files = glob.glob("sindy_results_*.json")
+    if json_files:
+        latest = sorted(json_files)[-1]
+        with open(latest, 'r') as f:
+            return json.load(f)
     
     # Try HuggingFace
     try:
         repo_id = "P2SAMAPA/p2-sindy-etf-dynamics-results"
         today = datetime.now().strftime("%Y-%m-%d")
-        data_url = f"https://huggingface.co/datasets/{repo_id}/resolve/main/sindy_results_{today}.json"
-        response = requests.get(data_url, timeout=10)
+        url = f"https://huggingface.co/datasets/{repo_id}/resolve/main/sindy_results_{today}.json"
+        response = requests.get(url, timeout=10)
         if response.status_code == 200:
             return response.json()
     except:
@@ -67,35 +40,35 @@ def load_data():
 
 
 def main():
-    st.markdown('<div class="main-header">📈 P2-SINDY-ETF-DYNAMICS</div>', unsafe_allow_html=True)
-    st.markdown("*Sparse Identification of Nonlinear Dynamics for ETF Selection*")
-    
     data = load_data()
     
     if not data:
-        st.error("⚠️ No data available. Run `python trainer.py` first.")
+        st.error("No data available. Run `python trainer.py` first.")
         return
     
     run_date = data.get('run_date', 'Unknown')
-    st.caption(f"📊 Results from: **{run_date}**")
+    st.caption(f"Results from: {run_date}")
     
     top_picks = data.get('top_picks', {})
     
     for universe, picks in top_picks.items():
-        st.markdown(f"## {universe}")
+        st.subheader(universe)
         
         cols = st.columns(min(len(picks), 3))
-        for idx, pick in enumerate(picks):
-            col = cols[idx % len(cols)]
-            with col:
-                conf_class = f"confidence-{pick['confidence'].lower()}"
+        for i, pick in enumerate(picks):
+            with cols[i % len(cols)]:
+                conf = pick['confidence'].lower()
+                color = "#27ae60" if conf == "high" else "#f39c12" if conf == "medium" else "#e74c3c"
+                
                 st.markdown(f"""
-                <div class="ticker-card">
+                <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                            border-radius: 10px; padding: 1.5rem; margin: 0.5rem 0;
+                            border-left: 5px solid {color};">
                     <h3 style="margin:0;">{pick['ticker']}</h3>
                     <div style="font-size:2rem; font-weight:700; margin:0.5rem 0;">
                         {pick['expected_return']:.1f}%
                     </div>
-                    <div class="{conf_class}">Confidence: {pick['confidence']}</div>
+                    <div style="color:{color}; font-weight:600;">Confidence: {pick['confidence']}</div>
                     <div style="font-size:0.7rem; color:#888; margin-top:0.5rem;">
                         Sparsity: {pick.get('sparsity', 0):.2f}
                     </div>
@@ -118,24 +91,16 @@ def main():
         st.plotly_chart(fig, use_container_width=True)
         st.markdown("---")
     
-    # SINDy Info
-    with st.expander("🔬 What is SINDy?"):
+    # SINDy explanation
+    with st.expander("What is SINDy?"):
         st.markdown("""
-        **SINDy (Sparse Identification of Nonlinear Dynamics)** discovers governing equations from data:
+        **SINDy** discovers governing equations from data:
         
-dX/dt = Θ(X) · Ξ
-
-
-
-Where:
-- `Θ(X)` is a library of candidate functions (polynomials, trig, etc.)
-- `Ξ` is a sparse coefficient matrix found via sparse regression
-
-This identifies the key dynamical relationships between ETFs and predicts future returns.
-""")
-
-# This is the line that was OUTSIDE the function - now it's INSIDE
-st.caption(f"Data as of {run_date}")
+        `dX/dt = Θ(X) · Ξ`
+        
+        - Θ(X): library of candidate functions (polynomials, trig, etc.)
+        - Ξ: sparse coefficient matrix via sparse regression
+        """)
 
 
 if __name__ == "__main__":
