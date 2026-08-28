@@ -116,6 +116,55 @@ def backtest_window(prices: np.ndarray, window: int, config: Dict) -> Dict:
     }
 
 
+def compute_ticker_picks(prices: np.ndarray, tickers: List[str], window: int,
+                          sindy_config: Dict, top_n: int) -> Tuple[List[Dict], Dict]:
+    """
+    Run SINDy on every ticker in a universe using a specific training window,
+    and return the top-N picks by predicted next-day return along with the
+    full per-ticker result dict.
+    """
+    config_copy = sindy_config.copy()
+    config_copy["window"] = window
+
+    ticker_predictions = {}
+    ticker_results = {}
+
+    for i, ticker in enumerate(tickers):
+        try:
+            result = get_sindy_predictions(prices[:, i:i + 1], config_copy)
+            ticker_predictions[ticker] = result["next_return"][0]
+            ticker_results[ticker] = {
+                "next_return": float(result["next_return"][0]),
+                "confidence": result["confidence"],
+                "sparsity": result["sparsity"],
+                "active_features": result["active_features"][:5]
+            }
+        except Exception as e:
+            logger.error(f"  Error on {ticker} (window={window}): {e}")
+            ticker_predictions[ticker] = 0.0
+            ticker_results[ticker] = {
+                "next_return": 0.0,
+                "confidence": "Low",
+                "sparsity": 0.0,
+                "active_features": []
+            }
+
+    sorted_picks = sorted(ticker_predictions.items(), key=lambda x: x[1], reverse=True)
+    top_picks = sorted_picks[:top_n]
+
+    picks = []
+    for ticker, pred in top_picks:
+        picks.append({
+            "ticker": ticker,
+            "expected_return": round(float(pred) * 100, 2),
+            "confidence": ticker_results[ticker].get("confidence", "Low"),
+            "sparsity": ticker_results[ticker].get("sparsity", 0),
+            "active_features": ticker_results[ticker].get("active_features", [])
+        })
+
+    return picks, ticker_results
+
+
 def run_trainer() -> Dict:
     """Main SINDy trainer with multi-window backtesting."""
     
@@ -133,7 +182,8 @@ def run_trainer() -> Dict:
         "top_picks": {},
         "backtest_results": {},
         "best_window": {},
-        "universes": {}
+        "universes": {},
+        "window_picks": {}
     }
     
     # Test each window
@@ -177,50 +227,34 @@ def run_trainer() -> Dict:
         
         results["backtest_results"][universe_name] = window_results
         
-        # Get current picks using best window
         best_win = results["best_window"].get(universe_name, {}).get("window", 252)
         
-        # Run SINDy on each ticker with best window
-        ticker_predictions = {}
-        ticker_results = {}
+        # Run SINDy on each ticker for EVERY window, so the UI can show ETF
+        # picks per window, not just for the single "best" one.
+        results["window_picks"][universe_name] = {}
+        best_win_ticker_results = {}
         
-        for i, ticker in enumerate(available):
-            try:
-                # Use best window for prediction
-                config_copy = config.SINDY_CONFIG.copy()
-                config_copy["window"] = best_win
-                
-                result = get_sindy_predictions(prices[:, i:i+1], config_copy)
-                ticker_predictions[ticker] = result["next_return"][0]
-                ticker_results[ticker] = {
-                    "next_return": float(result["next_return"][0]),
-                    "confidence": result["confidence"],
-                    "sparsity": result["sparsity"],
-                    "active_features": result["active_features"][:5]  # Top 5 features
-                }
-            except Exception as e:
-                logger.error(f"  Error on {ticker}: {e}")
-                ticker_predictions[ticker] = 0.0
+        for window in config.WINDOWS:
+            picks, ticker_results = compute_ticker_picks(
+                prices, available, window, config.SINDY_CONFIG, config.TOP_N
+            )
+            results["window_picks"][universe_name][window] = picks
+            if window == best_win:
+                best_win_ticker_results = ticker_results
         
-        # Sort by predicted return
-        sorted_picks = sorted(ticker_predictions.items(), key=lambda x: x[1], reverse=True)
-        top_picks = sorted_picks[:config.TOP_N]
-        
-        picks = []
-        for ticker, pred in top_picks:
-            picks.append({
-                "ticker": ticker,
-                "expected_return": round(float(pred) * 100, 2),
-                "confidence": ticker_results[ticker].get("confidence", "Low"),
-                "sparsity": ticker_results[ticker].get("sparsity", 0),
-                "active_features": ticker_results[ticker].get("active_features", [])
-            })
+        # Top picks / universe summary mirror the best window's results
+        picks = results["window_picks"][universe_name].get(best_win, [])
+        if not best_win_ticker_results:
+            # Fallback in case best_win isn't in config.WINDOWS for some reason
+            picks, best_win_ticker_results = compute_ticker_picks(
+                prices, available, best_win, config.SINDY_CONFIG, config.TOP_N
+            )
         
         results["top_picks"][universe_name] = picks
         results["universes"][universe_name] = {
             "tickers": available,
             "best_window": best_win,
-            "ticker_results": ticker_results
+            "ticker_results": best_win_ticker_results
         }
         
         logger.info(f"  ✅ Top picks for {universe_name}:")
