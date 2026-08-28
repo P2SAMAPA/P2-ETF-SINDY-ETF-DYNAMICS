@@ -52,7 +52,7 @@ def backtest_window(prices: np.ndarray, window: int, config: Dict) -> Dict:
             continue
         
         X_train = prices[train_start:i]
-        X_test = prices[i:i+1]
+        X_test = prices[i-1:i+1]  # need 2 rows to compute the return that seeds the prediction
         
         # Fit SINDy on training data
         try:
