@@ -38,3 +38,13 @@ SINDY_CONFIG = {
 }
 
 TOP_N = 3
+
+# How the "best window" per universe is chosen for the live picks shown in
+# the dashboard. "correlation" selects the window whose return PREDICTIONS
+# were most accurate historically (predicted vs. actual return
+# correlation) -- a direct measure of prediction quality. The previous
+# default, "sharpe", reflects backtested P&L, which can look good from a
+# window whose predictions barely explain anything (a window can post a
+# decent Sharpe just by riding the test period's market drift even with
+# near-zero genuine predictive power).
+BEST_WINDOW_METRIC = "correlation"

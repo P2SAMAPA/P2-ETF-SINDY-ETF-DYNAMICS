@@ -266,9 +266,10 @@ def main():
                 st.markdown(f"""
                 <div class="best-window-banner">
                     ✅ Best training window: <b>{best.get('window', 'N/A')} days</b>
-                    &nbsp;|&nbsp; Sharpe: <b>{metrics.get('sharpe', 0):.2f}</b>
+                    <span style="opacity:0.7;">(selected by return-prediction correlation, not Sharpe)</span>
+                    &nbsp;|&nbsp; Correlation: <b>{metrics.get('correlation', 0):.4f}</b>
                     &nbsp;|&nbsp; Directional accuracy: <b>{metrics.get('directional_accuracy', 0):.1%}</b>
-                    &nbsp;|&nbsp; Predictions tested: <b>{metrics.get('n_predictions', 0):,}</b>
+                    &nbsp;|&nbsp; Sharpe: <b>{metrics.get('sharpe', 0):.2f}</b>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -306,16 +307,16 @@ def main():
                 for w, r in window_results.items()
             ]).sort_values("Window").reset_index(drop=True)
 
-            best_idx = df_results["Sharpe Ratio"].idxmax()
+            best_idx = df_results["Correlation"].idxmax()
             best_row = df_results.loc[best_idx]
 
             # --- KPI row -------------------------------------------------
             kpi_cols = st.columns(4)
             kpi_data = [
                 ("Best Window", f"{int(best_row['Window'])}d"),
-                ("Best Sharpe", f"{best_row['Sharpe Ratio']:.2f}"),
+                ("Correlation", f"{best_row['Correlation']:.4f}"),
                 ("Directional Acc.", f"{best_row['Directional Accuracy']:.1f}%"),
-                ("Predictions", f"{int(best_row['Predictions']):,}"),
+                ("Sharpe (informational)", f"{best_row['Sharpe Ratio']:.2f}"),
             ]
             for col, (label, value) in zip(kpi_cols, kpi_data):
                 with col:
@@ -325,6 +326,10 @@ def main():
                         <div class="kpi-label">{label}</div>
                     </div>
                     """, unsafe_allow_html=True)
+
+            st.caption("Best window is selected by return-prediction correlation, not Sharpe — "
+                       "Sharpe reflects realized P&L, which can look good from a window whose "
+                       "predictions barely explain anything.")
 
             st.markdown("<div style='margin-top: 0.9rem;'></div>", unsafe_allow_html=True)
 

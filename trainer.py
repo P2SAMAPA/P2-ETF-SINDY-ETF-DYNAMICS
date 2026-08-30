@@ -266,16 +266,21 @@ def run_trainer() -> Dict:
             else:
                 logger.warning(f"    {result['error']}")
 
-        # Find best window
+        # Find best window -- selected by RETURN-PREDICTION quality
+        # (correlation between predicted and actual returns), not by
+        # backtested Sharpe. See config.BEST_WINDOW_METRIC for why.
         if window_results:
+            select_metric = config.BEST_WINDOW_METRIC
             best_window = max(window_results.items(),
-                             key=lambda x: x[1].get('sharpe', -999))
+                             key=lambda x: x[1].get(select_metric, -999))
             results["best_window"][universe_name] = {
                 "window": best_window[0],
-                "metrics": best_window[1]
+                "metrics": best_window[1],
+                "selected_by": select_metric,
             }
             logger.info(f"  ✅ Best window for {universe_name}: {best_window[0]} "
-                       f"(Sharpe: {best_window[1]['sharpe']:.2f})")
+                       f"(selected by {select_metric}={best_window[1][select_metric]:.4f}; "
+                       f"Sharpe: {best_window[1]['sharpe']:.2f})")
 
         results["backtest_results"][universe_name] = window_results
 
